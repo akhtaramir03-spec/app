@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Stickman Legend: Shadow Fighter</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="h-screen w-screen relative text-white select-none overflow-hidden bg-slate-950">
+
+    <!-- Canvas Main Game Area -->
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- UI Overlay (HUD) -->
+    <div id="hud" class="absolute top-0 left-0 w-full p-4 pointer-events-none flex justify-between items-start z-10 hidden">
+        <!-- Player Stats Left -->
+        <div class="flex flex-col gap-2 w-1/3 max-w-xs">
+            <div class="flex items-center justify-between text-xs font-orbitron text-gray-300">
+                <span id="playerLevelText">LVL 1</span>
+                <span id="playerScoreText" class="text-yellow-400 font-bold">SKOR: 0</span>
+            </div>
+            <!-- Health Bar -->
+            <div class="w-full bg-gray-900/80 rounded-full h-4 p-0.5 border border-gray-700/50 shadow-inner">
+                <div id="hpBar" class="bg-gradient-to-r from-red-600 to-red-400 h-full rounded-full w-full transition-all duration-150"></div>
+            </div>
+            <!-- Energy Bar -->
+            <div class="w-full bg-gray-900/80 rounded-full h-2.5 p-0.5 border border-gray-700/50 shadow-inner">
+                <div id="energyBar" class="bg-gradient-to-r from-cyan-500 to-blue-400 h-full rounded-full w-3/4 transition-all duration-150"></div>
+            </div>
+        </div>
+
+        <!-- Wave / Boss Info Center -->
+        <div class="flex flex-col items-center">
+            <div class="bg-black/60 backdrop-blur border border-red-500/30 px-6 py-1.5 rounded-full shadow-lg">
+                <h2 id="waveText" class="font-orbitron font-black text-xl text-red-500 tracking-wider">GELOMBANG 1</h2>
+            </div>
+            <div id="bossHpContainer" class="w-64 mt-2 hidden transition-all">
+                <div class="flex justify-between text-xs font-orbitron text-red-400 mb-1">
+                    <span>RAJA SHADOW</span>
+                    <span id="bossHpText">100%</span>
+                </div>
+                <div class="w-full bg-gray-900 rounded-full h-3 border border-red-600/50 p-0.5">
+                    <div id="bossHpBar" class="bg-red-600 h-full rounded-full w-full transition-all"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Coin Counter Right -->
+        <div class="flex items-center gap-2 bg-black/60 border border-yellow-500/30 px-4 py-2 rounded-xl backdrop-blur">
+            <i class="fa-solid fa-coins text-yellow-400 text-lg"></i>
+            <span id="coinText" class="font-orbitron font-bold text-yellow-400 text-lg">0</span>
+        </div>
+    </div>
+
+    <!-- On-Screen Controls for Mobile/Touch -->
+    <div id="touchControls" class="absolute bottom-4 left-0 w-full px-6 flex justify-between items-end pointer-events-auto z-20 md:hidden">
+        <!-- D-Pad Left/Right -->
+        <div class="flex gap-3">
+            <button id="btnLeft" class="touch-btn w-16 h-16 rounded-2xl flex items-center justify-center text-2xl active:bg-red-500/30">
+                <i class="fa-solid fa-arrow-left"></i>
+            </button>
+            <button id="btnRight" class="touch-btn w-16 h-16 rounded-2xl flex items-center justify-center text-2xl active:bg-red-500/30">
+                <i class="fa-solid fa-arrow-right"></i>
+            </button>
+        </div>
+
+        <!-- Action Buttons Right -->
+        <div class="grid grid-cols-3 gap-2">
+            <button id="btnDash" class="touch-btn w-14 h-14 rounded-full flex items-center justify-center text-cyan-400 border-cyan-500/40 active:bg-cyan-500/30">
+                <i class="fa-solid fa-bolt"></i>
+            </button>
+            <button id="btnJump" class="touch-btn w-14 h-14 rounded-full flex items-center justify-center text-yellow-400 border-yellow-500/40 active:bg-yellow-500/30">
+                <i class="fa-solid fa-arrow-up"></i>
+            </button>
+            <button id="btnSkill" class="touch-btn w-14 h-14 rounded-full flex items-center justify-center text-purple-400 border-purple-500/40 active:bg-purple-500/30">
+                <i class="fa-solid fa-wand-magic-sparkles"></i>
+            </button>
+            <button id="btnAttack" class="touch-btn col-span-3 h-16 rounded-2xl bg-gradient-to-r from-red-600 to-orange-600 text-white font-bold font-orbitron flex items-center justify-center gap-2 active:scale-95 shadow-lg">
+                <i class="fa-solid fa-hand-fist text-xl"></i> SERANG
+            </button>
+        </div>
+    </div>
+
+    <!-- Start Screen Overlay -->
+    <div id="startScreen" class="absolute inset-0 bg-black/90 backdrop-blur-md flex flex-col items-center justify-center z-30 p-4">
+        <div class="text-center max-w-lg">
+            <div class="inline-block p-3 rounded-2xl bg-red-600/20 border border-red-500/40 mb-4 animate-bounce">
+                <i class="fa-solid fa-user-ninja text-5xl text-red-500"></i>
+            </div>
+            <h1 class="text-4xl md:text-6xl font-black font-orbitron tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-red-500 via-orange-400 to-yellow-500 mb-2">
+                STICKMAN LEGEND
+            </h1>
+            <p class="text-gray-400 text-sm md:text-base mb-8">Pahlawan Bayangan: Kalahkan tentera kegelapan dan jadilah legenda!</p>
+
+            <!-- Key Controls Info -->
+            <div class="hidden md:grid grid-cols-2 gap-3 mb-8 text-left text-xs bg-gray-900/80 p-4 rounded-xl border border-gray-800">
+                <div><span class="bg-gray-800 px-2 py-1 rounded text-red-400 font-mono">A / D</span> - Bergerak Kiri/Kanan</div>
+                <div><span class="bg-gray-800 px-2 py-1 rounded text-red-400 font-mono">W / Space</span> - Melompat</div>
+                <div><span class="bg-gray-800 px-2 py-1 rounded text-red-400 font-mono">J / Click</span> - Serangan Pedang</div>
+                <div><span class="bg-gray-800 px-2 py-1 rounded text-red-400 font-mono">K</span> - Mengelak (Dash)</div>
+                <div><span class="bg-gray-800 px-2 py-1 rounded text-red-400 font-mono">L</span> - Kemahiran Khas (Skill)</div>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <button id="btnStartGame" class="px-8 py-4 bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 font-orbitron font-bold text-lg rounded-xl custom-glow transition-all duration-200 transform hover:scale-105 active:scale-95">
+                    MULA PERMAINAN
+                </button>
+                <button id="btnOpenShop" class="px-8 py-4 bg-gray-800 hover:bg-gray-700 font-orbitron font-bold text-lg rounded-xl border border-gray-700 transition-all duration-200">
+                    KEDAI NAIK TARAF
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Shop Modal -->
+    <div id="shopScreen" class="absolute inset-0 bg-black/95 backdrop-blur-md flex flex-col items-center justify-center z-40 p-4 hidden">
+        <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-xl shadow-2xl">
+            <div class="flex justify-between items-center mb-6 pb-4 border-b border-gray-800">
+                <h2 class="text-2xl font-black font-orbitron text-yellow-400 flex items-center gap-2">
+                    <i class="fa-solid fa-store"></i> KEDAI NAIK TARAF
+                </h2>
+                <div class="flex items-center gap-2 bg-black/50 px-3 py-1 rounded-lg border border-yellow-500/30">
+                    <i class="fa-solid fa-coins text-yellow-400"></i>
+                    <span id="shopCoins" class="font-orbitron font-bold text-yellow-400">0</span>
+                </div>
+            </div>
+
+            <!-- Upgrade Items List -->
+            <div class="space-y-4 mb-6">
+                <!-- Upgrade ATK -->
+                <div class="flex items-center justify-between bg-gray-800/60 p-4 rounded-xl border border-gray-700/50">
+                    <div class="flex items-center gap-3">
+                        <div class="p-3 bg-red-500/20 text-red-400 rounded-lg"><i class="fa-solid fa-hand-fist text-xl"></i></div>
+                        <div>
+                            <h3 class="font-bold">Kuasa Serangan (ATK)</h3>
+                            <p class="text-xs text-gray-400" id="atkLvlText">Tahap 1 (+10 Damage)</p>
+                        </div>
+                    </div>
+                    <button id="btnBuyAtk" class="px-4 py-2 bg-yellow-500 text-black font-bold font-orbitron rounded-lg hover:bg-yellow-400 transition">
+                        100 Koin
+                    </button>
+                </div>
+
+                <!-- Upgrade Max HP -->
+                <div class="flex items-center justify-between bg-gray-800/60 p-4 rounded-xl border border-gray-700/50">
+                    <div class="flex items-center gap-3">
+                        <div class="p-3 bg-green-500/20 text-green-400 rounded-lg"><i class="fa-solid fa-heart text-xl"></i></div>
+                        <div>
+                            <h3 class="font-bold">Kesihatan Maksimum (HP)</h3>
+                            <p class="text-xs text-gray-400" id="hpLvlText">Tahap 1 (+25 HP)</p>
+                        </div>
+                    </div>
+                    <button id="btnBuyHp" class="px-4 py-2 bg-yellow-500 text-black font-bold font-orbitron rounded-lg hover:bg-yellow-400 transition">
+                        100 Koin
+                    </button>
+                </div>
+
+                <!-- Upgrade Speed -->
+                <div class="flex items-center justify-between bg-gray-800/60 p-4 rounded-xl border border-gray-700/50">
+                    <div class="flex items-center gap-3">
+                        <div class="p-3 bg-blue-500/20 text-blue-400 rounded-lg"><i class="fa-solid fa-bolt text-xl"></i></div>
+                        <div>
+                            <h3 class="font-bold">Kelajuan Mengelak / Move</h3>
+                            <p class="text-xs text-gray-400" id="speedLvlText">Tahap 1 (+5% Speed)</p>
+                        </div>
+                    </div>
+                    <button id="btnBuySpeed" class="px-4 py-2 bg-yellow-500 text-black font-bold font-orbitron rounded-lg hover:bg-yellow-400 transition">
+                        150 Koin
+                    </button>
+                </div>
+            </div>
+
+            <button id="btnCloseShop" class="w-full py-3 bg-gray-800 hover:bg-gray-700 font-orbitron font-bold rounded-xl border border-gray-700">
+                KEMBALI KE MENU
+            </button>
+        </div>
+    </div>
+
+    <!-- Game Over Screen -->
+    <div id="gameOverScreen" class="absolute inset-0 bg-black/90 backdrop-blur-md flex flex-col items-center justify-center z-40 p-4 hidden">
+        <div class="text-center max-w-md">
+            <h1 class="text-5xl font-black font-orbitron text-red-600 mb-2 tracking-wider animate-pulse">KAMU TEWAS!</h1>
+            <p class="text-gray-400 mb-6">Bayangan kegelapan telah menguasai pahlawan kamu.</p>
+            
+            <div class="bg-gray-900 border border-gray-800 p-4 rounded-xl mb-6 space-y-2 font-orbitron">
+                <div class="flex justify-between text-sm">
+                    <span class="text-gray-400">Gelombang Dicapai:</span>
+                    <span id="finalWave" class="text-white font-bold">1</span>
+                </div>
+                <div class="flex justify-between text-sm">
+                    <span class="text-gray-400">Jumlah Skor:</span>
+                    <span id="finalScore" class="text-yellow-400 font-bold">0</span>
+                </div>
+                <div class="flex justify-between text-sm">
+                    <span class="text-gray-400">Koin Diperoleh:</span>
+                    <span id="finalCoins" class="text-yellow-400 font-bold">0</span>
+                </div>
+            </div>
+
+            <button id="btnRestartGame" class="w-full py-4 bg-gradient-to-r from-red-600 to-orange-600 font-orbitron font-bold text-lg rounded-xl custom-glow hover:from-red-500 hover:to-orange-500 transition">
+                CUBA LAGI
+            </button>
+        </div>
+    </div>
+
+    <!-- Game Logic JS -->
+    <script src="script.js"></script>
+</body>
+</html>
